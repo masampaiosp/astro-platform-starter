@@ -1,21 +1,115 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import ContextAlert from '../components/ContextAlert.astro';
-import Markdown from '../components/Markdown.astro';
+--- 
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SmokeTest Dashboard</title>
+  <style>
+    :root { --bg:#0b0f14; --card:#101621; --text:#e8eef9; --muted:#a8b3c7; --ok:#19c37d; --warn:#f5a524; --err:#ef4444; --line:#1c2433; }
+    *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#0b0f14,#0d121a);color:var(--text);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu}
+    .wrap{max-width:900px;margin:40px auto;padding:0 16px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 6px 30px rgba(0,0,0,.25)}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    h1{font-size:22px;margin:0} .muted{color:var(--muted)}
+    .pane{padding:16px 18px;border-top:1px solid var(--line)}
+    input,button,textarea{font:inherit}
+    .grid{display:grid;grid-template-columns:1fr auto;gap:10px}
+    input[type="url"]{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#0b111b;color:var(--text)}
+    textarea{width:100%;min-height:84px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#0b111b;color:var(--text);resize:vertical}
+    button{padding:12px 16px;border-radius:12px;border:1px solid transparent;background:#1b283b;color:#e7f0ff;cursor:pointer}
+    button.primary{background:#2a67ff} button:disabled{opacity:.6;cursor:not-allowed}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .tag{padding:6px 10px;border-radius:999px;background:#0d1420;border:1px solid var(--line);color:var(--muted);font-size:13px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}
+    th{color:#b9c5da;font-weight:600;background:#0f1520;position:sticky;top:0}
+    .status{font-weight:700}
+    .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}
+    .footer{display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+    .small{font-size:12px}
+    .pill{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#0e1522}
+    .hint{font-size:13px;color:var(--muted);margin-top:6px}
+    .code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;background:#0e1522;border:1px solid var(--line);padding:2px 6px;border-radius:6px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="pane">
+        <header>
+          <h1>🚀 SmokeTest Dashboard</h1>
+          <span class="tag">Netlify Function</span>
+          <span class="tag">HTTP GET</span>
+          <span class="tag">Timeout &amp; métricas</span>
+        </header>
+        <p class="muted">Digite a URL base do site e (opcional) os caminhos a testar. O app mede <em>status</em>, <em>latência</em>, <em>redirect</em> e <em>tamanho de resposta</em>.</p>
+      </div>
 
-const explainer = `
-An Astro website can go way beyond static pages - on the right platform.
+      <div class="pane">
+        <div class="row">
+          <div style="flex:1 1 420px">
+            <label for="base" class="muted small">URL base</label>
+            <input id="base" type="url" placeholder="https://meusite.com" />
+            <div class="hint">Dica: inclua <span class="code">https://</span></div>
+          </div>
+          <div style="align-self:flex-end">
+            <button id="run" class="primary">Testar</button>
+          </div>
+        </div>
 
-Netlify supports not only [Streaming SSR](https://docs.astro.build/en/guides/server-side-rendering/#html-streaming) and fast [Edge Middleware](https://docs.astro.build/en/guides/middleware/), but also [on-demand revalidation](https://www.netlify.com/blog/cache-tags-and-purge-api-on-netlify/) and [stale-while-revalidate](https://www.netlify.com/blog/swr-and-fine-grained-cache-control/). 
-Any page or data can be rebuilt only when needed, without site visitors ever getting a performance hit.
-`;
----
+        <div style="margin-top:14px">
+          <label for="paths" class="muted small">Caminhos (um por linha) — opcional</label>
+          <textarea id="paths" placeholder="/&#10;/login&#10;/api/health"></textarea>
+          <div class="row" style="margin-top:8px">
+            <button id="loadDefaults">Usar defaults</button>
+            <button id="clearPaths">Limpar</button>
+            <span class="muted small">Se vazio, testamos só a página inicial <span class="code">/</span>.</span>
+          </div>
+        </div>
+      </div>
 
-<Layout title="Welcome to Astro.">
-    <ContextAlert class="mb-8" />
-    <h1 class="mb-10">Netlify Platform Starter for Astro</h1>
-    <Markdown content={explainer} class="mb-10 text-lg" />
-    <p>
-        <a href="https://docs.netlify.com/frameworks/astro/" class="btn btn-lg sm:min-w-64">Read the Docs</a>
-    </p>
-</Layout>
+      <div class="pane">
+        <div class="footer">
+          <div>Timeout por endpoint: <span class="pill"><span id="timeoutLabel">8000</span> ms</span></div>
+          <div class="row">
+            <button id="fast">Rápido (5s)</button>
+            <button id="balanced">Balanceado (8s)</button>
+            <button id="slow">Lento (12s)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pane" id="resultsPane" style="display:none">
+        <h3 style="margin:0 0 8px 0">Resultados</h3>
+        <div id="summary" class="muted small" style="margin-bottom:8px"></div>
+        <div style="overflow:auto; max-height:60vh; border:1px solid var(--line); border-radius:12px">
+          <table id="table">
+            <thead>
+              <tr><th>Endpoint</th><th>Status</th><th>Tempo</th><th>Tamanho</th><th>URL final</th><th>Erro</th></tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="hint" style="margin-top:8px">Redirects contam como sucesso se a resposta final retornar <span class="code">2xx</span> ou <span class="code">3xx</span>.</div>
+      </div>
+
+      <div class="pane footer">
+        <div class="small muted">Feito para squads: rápido, sem dependências. Pode ser duplicado por ambiente.</div>
+        <div class="small muted">v1.0</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const runBtn = document.getElementById('run');
+    const base = document.getElementById('base');
+    const paths = document.getElementById('paths');
+    const tbody = document.getElementById('tbody');
+    const resultsPane = document.getElementById('resultsPane');
+    const summary = document.getElementById('summary');
+    const timeoutLabel = document.getElementById('timeoutLabel');
+
+    let timeoutMs = 8000;
+    document.getElementById('fast').onclick = () => { timeoutMs = 5000; timeoutLabel.
