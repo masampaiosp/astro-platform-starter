@@ -108,7 +108,7 @@
     </div>
   </div>
 
-  <!-- load external JS -->
-  <script src="/app.js"></script>
+  <!-- IMPORTANT: mark as inline so Astro doesn't bundle it -->
+  <script src="/app.js" is:inline></script>
 </body>
 </html>
