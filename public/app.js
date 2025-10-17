@@ -1,3 +1,5 @@
+// === SmokeTest App Dashboard with Extended Options ===
+
 const runBtn = document.getElementById('run');
 const base = document.getElementById('base');
 const paths = document.getElementById('paths');
@@ -5,6 +7,45 @@ const tbody = document.getElementById('tbody');
 const resultsPane = document.getElementById('resultsPane');
 const summary = document.getElementById('summary');
 const timeoutLabel = document.getElementById('timeoutLabel');
+
+// Create new option inputs dynamically
+const optionsPane = document.createElement('div');
+optionsPane.innerHTML = `
+  <div class="pane">
+    <h3 style="margin:0 0 10px 0">Advanced Options</h3>
+    <div class="row">
+      <div style="flex:1 1 45%">
+        <label class="muted small">Expected Keyword in page (optional)</label>
+        <input id="expectContains" type="text" placeholder="e.g. Premier League, Login, Bonus" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid #1c2433;background:#0b111b;color:#e8eef9" />
+      </div>
+      <div style="flex:1 1 45%">
+        <label class="muted small">Required Headers (comma separated)</label>
+        <input id="requireHeaders" type="text" placeholder="Cache-Control, Content-Security-Policy" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid #1c2433;background:#0b111b;color:#e8eef9" />
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div style="flex:1 1 45%">
+        <label class="muted small">Expected JSON Keys (comma separated)</label>
+        <input id="expectJsonKeys" type="text" placeholder="status, version, ok" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid #1c2433;background:#0b111b;color:#e8eef9" />
+      </div>
+      <div style="flex:1 1 45%">
+        <label class="muted small">Warn if slower than (ms)</label>
+        <input id="warnOverMs" type="number" value="1500" min="500" max="10000" step="100" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid #1c2433;background:#0b111b;color:#e8eef9" />
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div style="flex:1 1 45%">
+        <label class="muted small">Authorization Header</label>
+        <input id="authorization" type="text" placeholder="Bearer token123" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid #1c2433;background:#0b111b;color:#e8eef9" />
+      </div>
+      <div style="flex:1 1 45%">
+        <label class="muted small">Cookie Header</label>
+        <input id="cookie" type="text" placeholder="sessionid=12345" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid #1c2433;background:#0b111b;color:#e8eef9" />
+      </div>
+    </div>
+  </div>
+`;
+document.querySelector('.card').appendChild(optionsPane);
 
 let timeoutMs = 8000;
 document.getElementById('fast').onclick = () => { timeoutMs = 5000; timeoutLabel.textContent = timeoutMs; };
@@ -26,11 +67,23 @@ runBtn.onclick = async () => {
   runBtn.disabled = true; runBtn.textContent = 'Testing...';
   tbody.innerHTML = ''; resultsPane.style.display = 'block'; summary.textContent = 'Running…';
 
+  const payload = {
+    baseUrl: origin,
+    paths: list,
+    timeoutMs,
+    expectContains: document.getElementById('expectContains').value || null,
+    requireHeaders: document.getElementById('requireHeaders').value ? document.getElementById('requireHeaders').value.split(',').map(h=>h.trim()) : [],
+    expectJsonKeys: document.getElementById('expectJsonKeys').value ? document.getElementById('expectJsonKeys').value.split(',').map(h=>h.trim()) : [],
+    warnOverMs: Number(document.getElementById('warnOverMs').value) || 1500,
+    authorization: document.getElementById('authorization').value || null,
+    cookie: document.getElementById('cookie').value || null
+  };
+
   try {
     const res = await fetch('/.netlify/functions/smoke', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ baseUrl: origin, paths: list, timeoutMs })
+      body: JSON.stringify(payload)
     });
 
     const ct = res.headers.get('content-type') || '';
