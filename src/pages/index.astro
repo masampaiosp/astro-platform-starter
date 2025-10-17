@@ -108,14 +108,7 @@
     </div>
   </div>
 
-  <script>
-    const runBtn = document.getElementById('run');
-    const base = document.getElementById('base');
-    const paths = document.getElementById('paths');
-    const tbody = document.getElementById('tbody');
-    const resultsPane = document.getElementById('resultsPane');
-    const summary = document.getElementById('summary');
-    const timeoutLabel = document.getElementById('timeoutLabel');
-
-    let timeoutMs = 8000;
-    document.getElementById('fast').onclick = () => { timeoutMs = 5000; timeoutLabel.textContent = t
+  <!-- load external JS -->
+  <script src="/app.js"></script>
+</body>
+</html>
