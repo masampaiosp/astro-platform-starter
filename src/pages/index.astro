@@ -1,7 +1,7 @@
 ---
---- 
+---
 <!doctype html>
-<html lang="pt-br">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -42,61 +42,67 @@
           <h1>🚀 SmokeTest Dashboard</h1>
           <span class="tag">Netlify Function</span>
           <span class="tag">HTTP GET</span>
-          <span class="tag">Timeout &amp; métricas</span>
+          <span class="tag">Timeout & Metrics</span>
         </header>
-        <p class="muted">Digite a URL base do site e (opcional) os caminhos a testar. O app mede <em>status</em>, <em>latência</em>, <em>redirect</em> e <em>tamanho de resposta</em>.</p>
+        <p class="muted">
+          Enter the base URL of the site and (optional) the paths to test.
+          The app measures <em>status</em>, <em>latency</em>, <em>redirects</em>, and <em>response size</em>.
+        </p>
       </div>
 
       <div class="pane">
         <div class="row">
           <div style="flex:1 1 420px">
-            <label for="base" class="muted small">URL base</label>
-            <input id="base" type="url" placeholder="https://meusite.com" />
-            <div class="hint">Dica: inclua <span class="code">https://</span></div>
+            <label for="base" class="muted small">Base URL</label>
+            <input id="base" type="url" placeholder="https://example.com" />
+            <div class="hint">Tip: include <span class="code">https://</span></div>
           </div>
           <div style="align-self:flex-end">
-            <button id="run" class="primary">Testar</button>
+            <button id="run" class="primary">Run Test</button>
           </div>
         </div>
 
         <div style="margin-top:14px">
-          <label for="paths" class="muted small">Caminhos (um por linha) — opcional</label>
+          <label for="paths" class="muted small">Paths (one per line) — optional</label>
           <textarea id="paths" placeholder="/&#10;/login&#10;/api/health"></textarea>
           <div class="row" style="margin-top:8px">
-            <button id="loadDefaults">Usar defaults</button>
-            <button id="clearPaths">Limpar</button>
-            <span class="muted small">Se vazio, testamos só a página inicial <span class="code">/</span>.</span>
+            <button id="loadDefaults">Use defaults</button>
+            <button id="clearPaths">Clear</button>
+            <span class="muted small">If empty, only the home page <span class="code">/</span> will be tested.</span>
           </div>
         </div>
       </div>
 
       <div class="pane">
         <div class="footer">
-          <div>Timeout por endpoint: <span class="pill"><span id="timeoutLabel">8000</span> ms</span></div>
+          <div>Timeout per endpoint: <span class="pill"><span id="timeoutLabel">8000</span> ms</span></div>
           <div class="row">
-            <button id="fast">Rápido (5s)</button>
-            <button id="balanced">Balanceado (8s)</button>
-            <button id="slow">Lento (12s)</button>
+            <button id="fast">Fast (5s)</button>
+            <button id="balanced">Balanced (8s)</button>
+            <button id="slow">Slow (12s)</button>
           </div>
         </div>
       </div>
 
       <div class="pane" id="resultsPane" style="display:none">
-        <h3 style="margin:0 0 8px 0">Resultados</h3>
+        <h3 style="margin:0 0 8px 0">Results</h3>
         <div id="summary" class="muted small" style="margin-bottom:8px"></div>
         <div style="overflow:auto; max-height:60vh; border:1px solid var(--line); border-radius:12px">
           <table id="table">
             <thead>
-              <tr><th>Endpoint</th><th>Status</th><th>Tempo</th><th>Tamanho</th><th>URL final</th><th>Erro</th></tr>
+              <tr><th>Endpoint</th><th>Status</th><th>Time</th><th>Size</th><th>Final URL</th><th>Error</th></tr>
             </thead>
             <tbody id="tbody"></tbody>
           </table>
         </div>
-        <div class="hint" style="margin-top:8px">Redirects contam como sucesso se a resposta final retornar <span class="code">2xx</span> ou <span class="code">3xx</span>.</div>
+        <div class="hint" style="margin-top:8px">
+          Redirects count as success if the final response returns
+          <span class="code">2xx</span> or <span class="code">3xx</span>.
+        </div>
       </div>
 
       <div class="pane footer">
-        <div class="small muted">Feito para squads: rápido, sem dependências. Pode ser duplicado por ambiente.</div>
+        <div class="small muted">Built for squads: fast, dependency-free. Can be duplicated per environment.</div>
         <div class="small muted">v1.0</div>
       </div>
     </div>
@@ -112,51 +118,4 @@
     const timeoutLabel = document.getElementById('timeoutLabel');
 
     let timeoutMs = 8000;
-    document.getElementById('fast').onclick = () => { timeoutMs = 5000; timeoutLabel.textContent = timeoutMs; };
-    document.getElementById('balanced').onclick = () => { timeoutMs = 8000; timeoutLabel.textContent = timeoutMs; };
-    document.getElementById('slow').onclick = () => { timeoutMs = 12000; timeoutLabel.textContent = timeoutMs; };
-
-    document.getElementById('loadDefaults').onclick = () => { paths.value = ['/', '/login', '/api/health'].join('\\n'); };
-    document.getElementById('clearPaths').onclick = () => paths.value = '';
-
-    function normalizeBase(u){ try{ return new URL(u).origin; } catch { return null; } }
-    function parsePaths(text){ const lines = (text||'').split('\\n').map(s=>s.trim()).filter(Boolean); return lines.length?lines:['/']; }
-    function decorateStatus(row){ if(row.error) return 'err'; if(row.status>=500) return 'err'; if(row.status>=400) return 'warn'; return 'ok'; }
-
-    runBtn.onclick = async () => {
-      const origin = normalizeBase(base.value);
-      if(!origin){ alert('Informe uma URL válida. Ex.: https://meusite.com'); return; }
-
-      const list = parsePaths(paths.value);
-      runBtn.disabled = true; runBtn.textContent = 'Testando...';
-      tbody.innerHTML = ''; resultsPane.style.display = 'block'; summary.textContent = 'Executando…';
-
-      try {
-        const res = await fetch('/.netlify/functions/smoke', {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ baseUrl: origin, paths: list, timeoutMs })
-        });
-        const data = await res.json();
-        let ok = 0;
-        tbody.innerHTML = data.results.map(r => {
-          const cls = decorateStatus(r); if(cls==='ok') ok++;
-          return `<tr>
-            <td><span class="code">${r.endpoint}</span></td>
-            <td class="status ${cls}">${r.status ?? '-'}</td>
-            <td>${r.timeMs != null ? r.timeMs+' ms' : '-'}</td>
-            <td>${r.bytes != null ? r.bytes+' B' : '-'}</td>
-            <td class="small">${r.finalUrl ? `<span class="code">${r.finalUrl}</span>` : '-'}</td>
-            <td class="small">${r.error ? r.error : '-'}</td>
-          </tr>`;
-        }).join('');
-        summary.textContent = `Sucesso: ${ok}/${data.results.length} • Início: ${new Date(data.startedAt).toLocaleString()} • Duração total: ${data.durationMs} ms`;
-      } catch (e){
-        alert('Falha ao chamar a função: ' + e.message);
-        summary.textContent = 'Erro ao executar.';
-      } finally {
-        runBtn.disabled = false; runBtn.textContent = 'Testar';
-      }
-    };
-  </script>
-</body>
-</html>
+    document.getElementById('fast').onclick = () => { timeoutMs = 5000; timeoutLabel.textContent = t
